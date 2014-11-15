@@ -9,4 +9,5 @@ setup(name='awsnapshots',
       license='MIT',
       packages=['awsnapshots'],
       install_requires=['boto'],
+      scripts=['bin/awsnapshots'],
       zip_safe=False)
