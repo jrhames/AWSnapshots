@@ -18,7 +18,7 @@ AWS_ACCESS_KEY: secret_key
 
 ## Usage
 
-    #$ awsnapshots **region-id volume-id snapshots-to-keep [description]**
+    #$ awsnapshots region-id volume-id snapshots-to-keep [description]
 
 Example:
 
