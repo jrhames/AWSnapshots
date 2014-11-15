@@ -8,6 +8,6 @@ setup(name='awsnapshots',
       author_email='jr@hames.com.br',
       license='MIT',
       packages=['awsnapshots'],
-      install_requires=['boto'],
+      install_requires=['boto', 'pyyaml'],
       scripts=['bin/awsnapshots'],
       zip_safe=False)

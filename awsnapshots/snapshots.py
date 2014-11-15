@@ -1,9 +1,21 @@
 import boto.ec2
+import os
 import sys
-import config
+import yaml
 from datetime import datetime
 
 def run():
+    try:
+        config = yaml.load(file(os.getcwd() + '/awsnapshots.yaml'))
+    except:
+        try:
+            config = yaml.load('/etc/awsnapshots.yaml')
+        except:
+            pass
+
+        print "Configuration file not found."
+        sys.exit(1)
+
     if len(sys.argv) < 4:
         print "Usage: awsnapshots <region_id> <volume_id> <snapshots_to_keep> [description]"
         print "Region id, volume id, and number of snapshots to keep are required. Description is optional."
@@ -15,7 +27,7 @@ def run():
     keep = int(sys.argv[3])
 
 
-    conn = boto.ec2.connect_to_region(region, aws_access_key_id = config.AWS_ACCESS_KEY, aws_secret_access_key = config.AWS_SECRET_KEY)
+    conn = boto.ec2.connect_to_region(region, aws_access_key_id = config['AWS_ACCESS_KEY'], aws_secret_access_key = config['AWS_SECRET_KEY'])
 
     volumes = conn.get_all_volumes([vol_id])
     volume = volumes[0]
