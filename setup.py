@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='awsnapshots',
-      version='0.1',
+      version='0.1.2',
       description='Simple tool to manage AWS Volume Snapshots using the AWS API',
       url='http://github.com/jrhames/AWSnapshots',
       author='Jr. Hames',

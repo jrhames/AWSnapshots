@@ -1,40 +1,46 @@
-import boto.ec2
-import os
-import sys
-import yaml
 from datetime import datetime
+import argparse
+import boto.ec2
+import yaml
+import sys
+import os
+
+# CLI definitions
+parser = argparse.ArgumentParser(description='Simple tool to manage AWS Volume Snapshots using the AWS API.')
+parser.add_argument('region', nargs=1, action='store',
+                   help='The ID of the AWS region where your volumes are. (e.g., us-west-1)')
+parser.add_argument('volume', nargs=1, action='store',
+                   help='The ID of the volume you want to take the snapshot from. (e.g., vol-abcd1234)')
+parser.add_argument('keep', nargs=1, type=int, default=1, action='store',
+                   help='Number of snapshots to keep. (i.e., if 3, the last 3 snapshots will be kept. When the fourth one is taken, the oldest will be automatically deleted.')
+parser.add_argument('description', nargs='?', action='store',
+                   help='Snapshot description')
+parser.add_argument('--config', dest='config', type=argparse.FileType('r'),
+                   help='YAML formatted configuration file to be used. Default is ./awsnapshots.yaml')
 
 def run():
+    args = parser.parse_args()
+
     try:
-        config = yaml.load(file(os.getcwd() + '/awsnapshots.yaml'))
+        if (not args.config):
+            config = yaml.load(file(os.getcwd() + '/awsnapshots.yaml'))
+        else:
+            config = yaml.load(args.config)
     except:
-        try:
-            config = yaml.load('/etc/awsnapshots.yaml')
-        except:
-            pass
-
-        print "Configuration file not found."
+        print 'Configuration file not found.'
         sys.exit(1)
 
-    if len(sys.argv) < 4:
-        print "Usage: awsnapshots <region_id> <volume_id> <snapshots_to_keep> [description]"
-        print "Region id, volume id, and number of snapshots to keep are required. Description is optional."
+    conn = boto.ec2.connect_to_region(args.region, aws_access_key_id = config['AWS_ACCESS_KEY'], aws_secret_access_key = config['AWS_SECRET_KEY'])
+
+    volumes = conn.get_all_volumes([args.volume])
+    if (len(volumes) <= 0):
+        print 'Cannot find volume '+ args.volume
         sys.exit(1)
 
-
-    region = sys.argv[1]
-    vol_id = sys.argv[2]
-    keep = int(sys.argv[3])
-
-
-    conn = boto.ec2.connect_to_region(region, aws_access_key_id = config['AWS_ACCESS_KEY'], aws_secret_access_key = config['AWS_SECRET_KEY'])
-
-    volumes = conn.get_all_volumes([vol_id])
     volume = volumes[0]
     description = 'Created by AWSnapshots at ' + datetime.today().isoformat(' ')
-
-    if len(sys.argv) > 4:
-        description = sys.argv[4]
+    if args.description:
+        description = args.description
 
     if volume.create_snapshot(description):
         print 'Snapshot created with description: ' + description
@@ -50,7 +56,10 @@ def run():
         return 1
 
     snapshots.sort(date_compare)
-    delta = len(snapshots) - keep
+    delta = len(snapshots) - args.keep
     for i in range(delta):
         print 'Deleting snapshot ' + snapshots[i].description
-        snapshots[i].delete()
+        try:
+            snapshots[i].delete()
+        except:
+            print 'Snapshot ' + snapshots[i].description + ' could not be deleted.'
